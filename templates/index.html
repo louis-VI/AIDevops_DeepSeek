@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with AI</title>
+    <!-- 引入 Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入 highlight.js -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <!-- 自定义样式 -->
+    <style>
+        html, body {
+            height: 100%; /* 使页面高度占满整个视口 */
+            margin: 0; /* 去除默认边距 */
+            padding: 0; /* 去除默认内边距 */
+            background-color: #f0f8ff; /* 浅蓝色背景 */
+            font-family: 'Arial', sans-serif;
+        }
+
+        .container-fluid {
+            height: 100%; /* 使容器占满整个页面高度 */
+            padding: 0; /* 去除内边距 */
+        }
+
+        .card {
+            height: 100%; /* 使卡片占满整个容器高度 */
+            border: none;
+            border-radius: 15px; /* 整个卡片的边角圆滑 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加轻微阴影 */
+        }
+
+        .card-header {
+            background-color: #007bff; /* 蓝色 */
+            color: white;
+            border-radius: 15px 15px 0 0; /* 顶部圆角 */
+            padding: 10px; /* 调整内边距 */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .dropdown-menu {
+            border-radius: 10px; /* 下拉框边角圆滑 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加轻微阴影 */
+            border: none;
+        }
+
+        .dropdown-item {
+            padding: 10px 20px; /* 调整选项内边距 */
+            color: #333; /* 文字颜色 */
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa; /* 鼠标悬停时的背景色 */
+        }
+
+        .chat-history {
+            background-color: #ffffff; /* 白色背景 */
+            padding: 15px;
+            overflow-y: auto; /* 允许垂直滚动 */
+            flex-grow: 1; /* 使聊天记录区域占满剩余空间 */
+        }
+
+        .card-footer {
+            background-color: #f8f9fa; /* 浅灰色 */
+            border-radius: 0 0 15px 15px; /* 底部圆角 */
+            padding: 10px; /* 调整内边距 */
+        }
+
+        .input-group {
+            width: 100%; /* 输入框占满整个宽度 */
+        }
+
+        .btn-primary {
+            background-color: #007bff; /* 蓝色 */
+            border: none;
+            border-radius: 8px; /* 按钮圆角 */
+        }
+
+        .btn-primary:disabled {
+            background-color: #6c757d; /* 灰色 */
+            border-radius: 8px; /* 按钮圆角 */
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #0056b3; /* 深蓝色 */
+            border-radius: 8px; /* 按钮圆角 */
+        }
+
+        .copy-button, .extract-button, .copy-all-button, .like-button {
+            background-color: #f0f0f0; /* 与小助手卡片背景色一致 */
+            border: 1px solid #dcdcdc; /* 灰色边框 */
+            position: absolute;
+            z-index: 1;
+            padding: 3px 8px; /* 调整按钮大小 */
+            font-size: 12px;
+            border-radius: 8px; /* 按钮圆角 */
+            color: #000000; /* 黑色文字 */
+        }
+
+        .copy-button {
+            right: 10px; /* 复制按钮位置 */
+            top: 10px;
+        }
+
+        .extract-button {
+            right: 70px; /* 提取按钮位置 */
+            top: 10px;
+        }
+
+        .copy-all-button {
+            right: 10px; /* 复制按钮位置 */
+            bottom: 10px; /* 放在右下角 */
+            top: auto; /* 覆盖之前的 top 设置 */
+        }
+
+        .like-button {
+            right: 50px; /* 点赞按钮位置 */
+            bottom: 10px; /* 放在右下角 */
+            top: auto; /* 覆盖之前的 top 设置 */
+        }
+
+        .copy-button:hover, .extract-button:hover, .copy-all-button:hover, .like-button:hover {
+            background-color: #e0e0e0; /* 鼠标悬停时稍微变深 */
+            border-radius: 8px; /* 按钮圆角 */
+        }
+
+        .user-message .card {
+            background-color: #007bff; /* 蓝色 */
+            color: #000000; /* 黑色文字 */
+            border-radius: 15px; /* 消息卡片圆角 */
+        }
+
+        .assistant-message .card {
+            background-color: #f0f0f0; /* 灰色 */
+            color: #000000; /* 黑色文字 */
+            position: relative; /* 使复制按钮相对于卡片定位 */
+            border-radius: 15px; /* 消息卡片圆角 */
+        }
+
+        .loading-dots {
+            display: inline-block;
+            font-size: 20px;
+        }
+
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% {
+                content: '.';
+            }
+            40% {
+                content: '..';
+            }
+            60%, 100% {
+                content: '...';
+            }
+        }
+
+        pre {
+            position: relative; /* 使复制按钮相对于代码块定位 */
+            background-color: #1e1e1e; /* 黑色背景 */
+            color: #ffffff; /* 白色文字 */
+            padding: 15px;
+            border-radius: 8px; /* 代码块圆角 */
+            margin: 0;
+        }
+
+        code {
+            display: block;
+            padding: 0;
+            background-color: transparent;
+            color: #ffffff; /* 白色文字 */
+        }
+
+        .hljs {
+            background-color: #1e1e1e; /* 黑色背景 */
+            color: #ffffff; /* 白色文字 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid h-100">
+        <div class="row h-100">
+            <div class="col-md-12 h-100 p-0">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">蓝鲸AI</h5>
+                        <!-- 三横杠按钮 -->
+                        <div class="dropdown">
+                            <button class="menu-button" id="menuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                ☰
+                            </button>
+                            <!-- 下拉菜单 -->
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuButton">
+                                <li><a class="dropdown-item" href="#" onclick="selectOption('mysql')">MySQL</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="selectOption('redis')">Redis</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="selectOption('linux')">Linux</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="selectOption('kafka')">Kafka</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="selectOption('Docker')">Docker</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="selectOption('blockchain')">Blockchain</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="selectOption('smartcontract')">SmartContract</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="selectOption('Raspberry')">Raspberry</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body chat-history" id="chat-history">
+                        <!-- 聊天记录将动态插入到这里 -->
+                    </div>
+                    <div class="card-footer">
+                        <div class="input-group">
+                            <input type="text" id="user-input" class="form-control" placeholder="请输入提示词...">
+                            <button id="send-button" class="btn btn-primary">发送</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入 Bootstrap JS 和依赖 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 引入 marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 自定义脚本 -->
+    <script>
+        // 建立 WebSocket 连接
+        const ws = new WebSocket(`ws://${window.location.host}/ws`);
+
+        // 获取 DOM 元素
+        const chatHistory = document.getElementById('chat-history');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        // 处理接收到的消息
+        ws.onmessage = (event) => {
+            const message = event.data;
+            appendMessage('小助手', message);
+            enableSendButton(); // 启用发送按钮
+        };
+
+        // 发送用户消息
+        sendButton.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message) {
+                appendMessage('你', message);
+                ws.send(message);  // 通过 WebSocket 发送消息
+                userInput.value = '';  // 清空输入框
+                disableSendButton(); // 禁用发送按钮
+            }
+        });
+
+        // 在聊天记录中追加消息
+        function appendMessage(role, content) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('mb-3', `${role === '你' ? 'user-message' : 'assistant-message'}`);
+            messageElement.innerHTML = `
+                <div class="d-flex justify-content-${role === '你' ? 'end' : 'start'}">
+                    <div class="card" style="max-width: 70%;">
+                        <div class="card-body">
+                            <strong>${role}:</strong> <span class="message-content"></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatHistory.appendChild(messageElement);
+            chatHistory.scrollTop = chatHistory.scrollHeight;  // 自动滚动到底部
+
+            // 如果是 AI 的消息，启用打字机效果
+            if (role === '小助手') {
+                typeMessage(messageElement.querySelector('.message-content'), content);
+            } else {
+                // 用户消息直接显示
+                messageElement.querySelector('.message-content').innerHTML = marked.parse(content);
+            }
+        }
+
+        // 打字机效果
+        function typeMessage(element, content) {
+            const markdownContent = marked.parse(content);  // 将 Markdown 转换为 HTML
+            let index = 0;
+            const speed = 10;  // 每 10 毫秒显示一个字符（每秒 100 字）
+            const interval = setInterval(() => {
+                if (index < markdownContent.length) {
+                    element.innerHTML = markdownContent.substring(0, index + 1);
+                    index++;
+                    chatHistory.scrollTop = chatHistory.scrollHeight;  // 自动滚动到底部
+                } else {
+                    clearInterval(interval);  // 停止打字机效果
+                    addCopyButtons(element);  // 添加复制按钮
+                    addExtractButtons(element);  // 添加提取按钮
+                    highlightCode(element);  // 高亮代码
+                    addCopyAllButton(element.closest('.card')); // 添加复制按钮
+                    addLikeButton(element.closest('.card')); // 添加点赞按钮
+                }
+            }, speed);
+        }
+
+        // 添加复制按钮
+        function addCopyAllButton(card) {
+            const copyAllButton = document.createElement('button');
+            copyAllButton.innerHTML = '📋'; // 使用 Unicode 复制图标
+            copyAllButton.classList.add('btn', 'btn-sm', 'copy-all-button');
+            copyAllButton.addEventListener('click', () => {
+                const content = card.querySelector('.message-content').innerText;
+                copyToClipboard(content);
+                copyAllButton.innerHTML = '✔️'; // 复制成功后显示勾号
+                setTimeout(() => {
+                    copyAllButton.innerHTML = '📋'; // 2秒后恢复为复制图标
+                }, 2000);
+            });
+            card.appendChild(copyAllButton);
+        }
+
+        // 添加点赞按钮
+        function addLikeButton(card) {
+            const likeButton = document.createElement('button');
+            likeButton.innerHTML = '👍'; // 使用 Unicode 点赞图标
+            likeButton.classList.add('btn', 'btn-sm', 'like-button');
+            likeButton.addEventListener('click', () => {
+                likeButton.innerHTML = '🔥'; // 点赞成功后显示火焰图标
+                setTimeout(() => {
+                    likeButton.innerHTML = '👍'; // 0.5秒后恢复为点赞图标
+                }, 500); // 0.5秒后恢复
+            });
+            card.appendChild(likeButton);
+        }
+
+        // 添加复制按钮
+        function addCopyButtons(container) {
+            const codeBlocks = container.querySelectorAll('pre');
+            codeBlocks.forEach((codeBlock) => {
+                const copyButton = document.createElement('button');
+                copyButton.innerText = 'Copy';
+                copyButton.classList.add('btn', 'btn-sm', 'copy-button');
+                copyButton.addEventListener('click', () => {
+                    copyToClipboard(codeBlock.querySelector('code').innerText);
+                    copyButton.innerText = 'Copied!';
+                    setTimeout(() => {
+                        copyButton.innerText = 'Copy';
+                    }, 2000);
+                });
+                codeBlock.appendChild(copyButton); // 将复制按钮添加到代码块内部
+            });
+        }
+
+        function addExtractButtons(container) {
+    const codeBlocks = container.querySelectorAll('pre');
+    codeBlocks.forEach((codeBlock) => {
+        const extractButton = document.createElement('button');
+        extractButton.innerText = 'Extract';
+        extractButton.classList.add('btn', 'btn-sm', 'extract-button');
+        extractButton.style.right = '70px'; // 调整提取按钮的位置
+
+        extractButton.addEventListener('click', () => {
+            // 获取代码块内容
+            const codeContent = codeBlock.querySelector('code').innerText;
+
+            // 默认文件后缀名
+            let fileExtension = '.txt';
+
+            // 检查代码内容是否包含 Solidity 关键字
+            if (
+                codeContent.includes('pragma solidity') ||
+                codeContent.includes('SPDX-License-Identifier') ||
+                codeContent.includes('contract ')
+            ) {
+                fileExtension = '.sol';
+            }
+            // 检查代码内容是否以 #!/bin/bash 开头
+            else if (codeContent.trim().startsWith('#!/bin/bash')) {
+                fileExtension = '.sh';
+            }
+            // 检查代码内容是否包含 @echo off 或 echo 关键字（Windows 批处理脚本）
+            else if (codeContent.includes('@echo off') || codeContent.includes('echo ')) {
+                fileExtension = '.bat';
+            }
+            // 检查代码内容是否为 SQL 语句
+            else if (
+                codeContent.match(/\bCREATE\b/i) ||
+                codeContent.match(/\bINSERT INTO\b/i) ||
+                codeContent.match(/\bUPDATE\b/i) ||
+                codeContent.match(/\bDELETE\b/i) ||
+                codeContent.match(/\bSELECT\b/i) ||
+                codeContent.match(/\bDROP\b/i) ||
+                codeContent.match(/\bALTER\b/i)
+            ) {
+                fileExtension = '.sql';
+            } else {
+                // 如果代码内容不以 #!/bin/bash 开头，则根据 class 识别代码类型
+                const codeElement = codeBlock.querySelector('code');
+                const classList = codeElement.classList;
+
+                if (classList.contains('language-python')) {
+                    fileExtension = '.py';
+                } else if (classList.contains('language-java')) {
+                    fileExtension = '.java';
+                } else if (classList.contains('language-go')) {
+                    fileExtension = '.go';
+                } else if (classList.contains('language-php')) {
+                    fileExtension = '.php';
+                } else if (classList.contains('language-cpp')) {
+                    fileExtension = '.cpp';
+                } else if (classList.contains('language-c')) {
+                    fileExtension = '.c';
+                } else if (classList.contains('language-shell')) {
+                    fileExtension = '.sh';
+                } else if (classList.contains('language-dockerfile')) {
+                    fileExtension = 'Dockerfile';
+                } else if (classList.contains('language-javascript')) {
+                    fileExtension = '.js';
+                } else if (classList.contains('language-css')) {
+                    fileExtension = '.css';
+                } else if (classList.contains('language-html')) {
+                    fileExtension = '.html';
+                }
+            }
+
+            // 生成文件名
+            const fileName = `code_block_${Date.now()}${fileExtension}`;
+
+            // 创建 Blob 对象
+            const blob = new Blob([codeContent], { type: 'text/plain' });
+
+            // 创建下载链接
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(blob);
+            downloadLink.download = fileName;
+
+            // 触发下载
+            downloadLink.click();
+
+            // 释放 URL 对象
+            URL.revokeObjectURL(downloadLink.href);
+
+            // 提示用户
+            alert(`代码已成功提取并下载为 ${fileName}！`);
+        });
+
+        // 将提取按钮添加到代码块内部
+        codeBlock.appendChild(extractButton);
+    });
+}
+
+        // 复制到剪贴板
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
+        // 禁用发送按钮
+        function disableSendButton() {
+            sendButton.disabled = true;
+            sendButton.classList.remove('btn-primary');
+            sendButton.classList.add('btn-secondary');
+        }
+
+        // 启用发送按钮
+        function enableSendButton() {
+            sendButton.disabled = false;
+            sendButton.classList.remove('btn-secondary');
+            sendButton.classList.add('btn-primary');
+        }
+
+        // 高亮代码
+        function highlightCode(container) {
+            const codeBlocks = container.querySelectorAll('pre code');
+            codeBlocks.forEach((codeBlock) => {
+                hljs.highlightBlock(codeBlock);
+            });
+        }
+
+        // 处理下拉菜单选项选择
+        function selectOption(option) {
+            const roleMessage = `${option} 专家,请问有什么可以帮助你的？`; // 根据选项生成角色信息
+            ws.send(JSON.stringify({ type: "set_role", content: roleMessage })); // 发送角色信息到后端
+            alert(`选择生成${option}用脚本`);
+
+        }
+
+
+    </script>
+</body>
+</html>
