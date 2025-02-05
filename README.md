@@ -1,5 +1,5 @@
 # DeepSeek AI-Based Automated Script Generation
-​​
+​​​​
 ## Overview
 
 This project integrates the **DeepSeek AI model** with **FastAPI** to provide an automated script generation and operations solution. Users can generate scripts (e.g., shell, Python, SQL) based on their specific requirements. The system also includes a download feature for generated scripts, implemented using **HTML**, **CSS**, and **JavaScript**, with **highlight.js** for syntax highlighting. FastAPI, paired with a template engine, ensures high-speed responses and a smooth user experience.
@@ -140,9 +140,8 @@ print(generated_script)
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-```
 
-### Key Changes:
+## Key Changes:
 - **FastAPI Integration**: Emphasized that the backend is built with **FastAPI** to ensure fast responses and high concurrency, which is ideal for handling multiple requests in real-time.
 - **Template Engine**: Mentioned the use of a template engine in conjunction with FastAPI to improve rendering of dynamic HTML content.
 - **Fine-Tuning**: Retained the fine-tuning section with relevant steps to add custom datasets for domain-specific model improvements.
